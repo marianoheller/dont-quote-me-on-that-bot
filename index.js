@@ -16,6 +16,8 @@ app.use(express.urlencoded({ extended: true }))
 app.use(express.static(path.join(__dirname, 'public')));
 
 // General
-app.get('/', quoter ,(req, res) => res.send('Hello World!'))
+app.get('/', quoter ,(req, res) => res.json({
+    replies: req.replies
+}))
 
 app.listen(3000, () => console.log('Example app listening on port 3000!'))

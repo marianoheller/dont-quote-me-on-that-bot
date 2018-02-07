@@ -20,6 +20,9 @@ module.exports = function( req, res, next) {
     getAllComments(r)
     .then( filterComments )
     .then( replyWithQoute )
+    .then( (replies) => {
+        req.replies = replies;
+    })
     .then( next )
     .catch( console.log )
 
@@ -33,7 +36,7 @@ module.exports = function( req, res, next) {
      */
     function getAllComments(r) {
         return r.getRising( 'all').map( (post) => {
-            console.log(post.title);
+            //console.log(post.title);
             return post.comments;
         })
         .then( async (commentsListings) => {
@@ -42,6 +45,15 @@ module.exports = function( req, res, next) {
                     skipReplies: true
                 });
                 return comments;
+            } ))
+        })
+        .then( async (commentsListings) => {
+            return await Promise.all( commentsListings.map( (comments) => {
+                return Promise.all(
+                    comments.map( (comment) => {
+                        return comment.expandReplies({depth: 1});
+                    } )
+                );
             } ))
         })
     }
@@ -58,10 +70,16 @@ module.exports = function( req, res, next) {
         return commentsListings.map( (comments,i ) => {
             //console.log("COMMENTS", i, comments.length )
             return comments.filter( (comment) => {
-                return regexPhrase.test(comment.body)
+                return regexPhrase.test(comment.body) &&
+                    comment.replies.every( (reply) => reply.author.name!=process.env.CLIENT_USERNAME)
+            }).map( (comment) => {
+                comment.indexKeyPhrase = comment.body.search(regexPhrase);
+                return comment;
             })
         })
+        //Flatten Listings
         .reduce( (acc, e) => acc.concat(e), [] )
+        //Filter empty
         .filter( comment => Boolean(comment) );
     } 
 
@@ -71,8 +89,17 @@ module.exports = function( req, res, next) {
      */
     function replyWithQoute( comments) {
         console.log("COMMENTS TO REPLY", comments.length);
-        comments.forEach( (comment) => {
-            comment.reply(':)');
+        return comments.map( (comment) => {
+            const { body } = comment;
+            if(comment.indexKeyPhrase===-1) return;
+
+            const reply = '>' + comment.body.slice(0, comment.indexKeyPhrase+22);
+            console.log("COMMENT", comment.indexKeyPhrase, comment.body);
+            console.log("QUOTING", reply);
+
+            comment.reply( reply );
+
+            return reply;
         })
         return;
     }
