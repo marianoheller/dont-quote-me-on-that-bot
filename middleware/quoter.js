@@ -16,34 +16,64 @@ module.exports = function( req, res, next) {
     } catch(err) {
         throw err;
     }
+
+    getAllComments(r)
+    .then( filterComments )
+    .then( replyWithQoute )
+    .then( next )
+    .catch( console.log )
+
+
+    //===============================================================
+    // Inner functions
     
-    // Printing a list of the titles on the front page
-    r.getRising({limit: 25}).map( (post) => post.comments)
-    .then( async (commentsListings) => {
-        return  await Promise.all( commentsListings.map( async (commentListing) => {
-            const comments =  await commentListing.fetchAll({
-                skipReplies: true
-            });
-            return comments;
-        } ))
-    })
-    .then( (commentsListings) => {
+    /**
+     * Gets an Array of Listings. Each Listing containing an Array of Comments
+     * @param {*} r snoowrap instance 
+     */
+    function getAllComments(r) {
+        return r.getRising( 'all').map( (post) => {
+            console.log(post.title);
+            return post.comments;
+        })
+        .then( async (commentsListings) => {
+            return  await Promise.all( commentsListings.map( async (commentListing) => {
+                const comments =  await commentListing.fetchAll({
+                    skipReplies: true
+                });
+                return comments;
+            } ))
+        })
+    }
+
+    /**
+     * Filters out comments
+     * By phrase
+     * By already existent reply in thread
+     * @param {*} commentsListings 
+     */
+    function filterComments(commentsListings) {
         const regexPhrase = /don.?t quote me on that/i;
-        return commentsListings.map( (comments) => 
-            comments.filter( (comment) => {
-                if(comment.author.name === 'TW_mcnuggets') console.log(comment);
+
+        return commentsListings.map( (comments,i ) => {
+            //console.log("COMMENTS", i, comments.length )
+            return comments.filter( (comment) => {
                 return regexPhrase.test(comment.body)
             })
-        ).filter( comments => Boolean(comments.length) );
-    })
-    .then( (commentsListings) => {
-        commentsListings.forEach( (comments) => comments.forEach( (comment) => console.log));
-    })
-    .then( () => {
-        next();
-    })
-    .catch( (err) => {
-        console.log(err);
-    })
-  
+        })
+        .reduce( (acc, e) => acc.concat(e), [] )
+        .filter( comment => Boolean(comment) );
+    } 
+
+    /**
+     * Parses text to quote and replies
+     * @param {*} comments 
+     */
+    function replyWithQoute( comments) {
+        console.log("COMMENTS TO REPLY", comments.length);
+        comments.forEach( (comment) => {
+            comment.reply(':)');
+        })
+        return;
+    }
 }
