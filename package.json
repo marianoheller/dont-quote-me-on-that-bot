@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "engines" : { 
-    "node" : "8.4.0" 
+  "engines": {
+    "node": "8.4.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha middleware/*.spec.js",
     "start": "node ."
   },
   "author": "Mariano Heller",
@@ -18,5 +18,10 @@
     "express": "^4.16.2",
     "morgan": "^1.9.0",
     "snoowrap": "^1.15.2"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "mocha": "^5.0.0",
+    "sinon": "^4.2.2"
   }
 }
