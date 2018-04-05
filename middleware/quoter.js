@@ -1,6 +1,6 @@
 'use strict';
 const snoowrap = require('snoowrap');
- 
+const each = require('async/each');
 
 
 module.exports = function( req, res, next) {
@@ -35,6 +35,49 @@ module.exports = function( req, res, next) {
      * @param {*} r snoowrap instance 
      */
     function getAllComments(r) {
+
+        const mws = [
+            r.getRising( 'all').map( post => post.comments),
+            r.getControversial( 'all').map( post => post.comments),
+            r.getTop( 'all').map( post => post.comments),
+            r.getHot( 'all').map( post => post.comments),
+            r.getNew( 'all').map( post => post.comments)
+        ];
+        const retComments = [];
+        
+        return new Promise( (resolve, reject) => {
+            each( mws, (__mw, __cb) => {
+                __mw.then( async (commentsListings) => {
+                    return  await Promise.all( commentsListings.map( async (commentListing) => {
+                        const comments =  await commentListing.fetchAll({
+                            skipReplies: true
+                        });
+                        return comments;
+                    } ))
+                })
+                .then( async (commentsListings) => {
+                    return await Promise.all( commentsListings.map( (comments) => {
+                        return Promise.all(
+                            comments.map( (comment) => {
+                                return comment.expandReplies({depth: 1});
+                            } )
+                        );
+                    } ))
+                })
+                .then( (comments) => {
+                    retComments.concat(comments);
+                    __cb();
+                })
+                .catch( (err) => {
+                    console.log(err);
+                    reject(err);
+                } )
+            }, () => {
+                resolve(retComments)
+            })
+        })
+        
+/* 
         return r.getRising( 'all').map( (post) => {
             //console.log(post.title);
             return post.comments;
@@ -55,7 +98,7 @@ module.exports = function( req, res, next) {
                     } )
                 );
             } ))
-        })
+        }) */
     }
 
     /**
