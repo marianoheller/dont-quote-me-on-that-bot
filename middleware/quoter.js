@@ -34,14 +34,15 @@ module.exports = function( req, res, next) {
      * Gets an Array of Listings. Each Listing containing an Array of Comments
      * @param {*} r snoowrap instance 
      */
+
     function getAllComments(r) {
 
         const mws = [
-            r.getRising( 'all').map( post => post.comments),
+            r.getRising('all').map( post => post.comments),/* 
             r.getControversial( 'all').map( post => post.comments),
-            r.getTop( 'all').map( post => post.comments),
-            r.getHot( 'all').map( post => post.comments),
-            r.getNew( 'all').map( post => post.comments)
+            r.getTop('all').map( post => post.comments),
+            r.getHot('all').map( post => post.comments),
+            r.getNew('all').map( post => post.comments) */
         ];
         const retComments = [];
         
